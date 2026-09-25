@@ -15,9 +15,12 @@ Foundry project Responses REST route with `DefaultAzureCredential` and the
 
 ## Run
 
-Requires .NET 10 or later for this checked-in project:
+Requires the stable .NET 10 LTS SDK. The repository pins SDK `10.0.301` in
+`global.json`, permits later stable patches in the same feature band, and does
+not opt into prerelease or .NET 11 SDKs:
 
 ```sh
+dotnet --version
 dotnet run --project src/ChangeRiskAgent -- CHG-1001
 dotnet run --project src/ChangeRiskAgent -- CHG-9999
 
@@ -47,6 +50,12 @@ project URLs.
 ## Test
 
 ```sh
+# Complete offline release validation
+dotnet restore ChangeRiskAgent.slnx
+dotnet build ChangeRiskAgent.slnx -c Release --no-restore
+dotnet run --project tests/ChangeRiskAgent.Tests -c Release --no-build
+dotnet format ChangeRiskAgent.slnx --verify-no-changes --no-restore
+
 # Network-free contract and safety tests
 dotnet run --project tests/ChangeRiskAgent.Tests
 

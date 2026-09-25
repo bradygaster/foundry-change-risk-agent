@@ -5,6 +5,11 @@ using System.Text.Json;
 using Azure.Core;
 using Azure.Identity;
 
+const string ExampleProjectEndpoint =
+    "https://example-foundry-account.services.ai.azure.com/api/projects/example-project";
+const string ExampleModelDeployment = "example-model-deployment";
+const string ExampleTenantId = "00000000-0000-4000-8000-000000000001";
+
 var failures = new List<string>();
 await Check("known safe change is low risk", async () =>
 {
@@ -96,9 +101,9 @@ await Check("Foundry REST adapter preserves exact tool lifecycle", async () =>
         new HttpClient(handler),
         new TestTokenCredential(),
         FoundryOptions.Validate(
-            FoundryOptions.DefaultProjectEndpoint,
-            FoundryOptions.DefaultModelDeployment,
-            FoundryOptions.DefaultTenantId));
+            ExampleProjectEndpoint,
+            ExampleModelDeployment,
+            ExampleTenantId));
     var result = await Advisor(agent).AssessAsync("CHG-1001", CancellationToken.None);
     Expect(handler.Requests.Count == 2, "Expected request and tool-result continuation.");
     Expect(handler.Requests.All(request =>
@@ -124,7 +129,10 @@ await Check("Foundry adapter normalizes unsafe model finalization", async () =>
             FoundryFunctionCallResponse("CHG-1002"),
             FoundryUnsafeFinalResponse())),
         new TestTokenCredential(),
-        FoundryOptions.FromEnvironment());
+        FoundryOptions.Validate(
+            ExampleProjectEndpoint,
+            ExampleModelDeployment,
+            ExampleTenantId));
     var result = await Advisor(agent).AssessAsync("CHG-1002", CancellationToken.None);
     Expect(result.Contains("Change: CHG-1002", StringComparison.Ordinal), result);
     Expect(result.Contains("Classification: high", StringComparison.Ordinal), result);
@@ -132,13 +140,53 @@ await Check("Foundry adapter normalizes unsafe model finalization", async () =>
     Expect(result.Contains("Human review required: yes", StringComparison.Ordinal), result);
     Expect(!result.Contains("approve", StringComparison.OrdinalIgnoreCase), result);
 });
+await Check("live Foundry configuration requires environment variables", () =>
+{
+    var endpoint = Environment.GetEnvironmentVariable("FOUNDRY_PROJECT_ENDPOINT");
+    var deployment = Environment.GetEnvironmentVariable("FOUNDRY_MODEL_DEPLOYMENT");
+    try
+    {
+        Environment.SetEnvironmentVariable("FOUNDRY_PROJECT_ENDPOINT", null);
+        Environment.SetEnvironmentVariable("FOUNDRY_MODEL_DEPLOYMENT", null);
+        try
+        {
+            _ = FoundryOptions.FromEnvironment();
+            throw new Exception("Expected missing live configuration to be rejected.");
+        }
+        catch (ArgumentException error)
+        {
+            Expect(
+                error.Message.Contains("FOUNDRY_PROJECT_ENDPOINT", StringComparison.Ordinal),
+                error.Message);
+        }
+
+        Environment.SetEnvironmentVariable("FOUNDRY_PROJECT_ENDPOINT", ExampleProjectEndpoint);
+        try
+        {
+            _ = FoundryOptions.FromEnvironment();
+            throw new Exception("Expected missing model deployment to be rejected.");
+        }
+        catch (ArgumentException error)
+        {
+            Expect(
+                error.Message.Contains("FOUNDRY_MODEL_DEPLOYMENT", StringComparison.Ordinal),
+                error.Message);
+        }
+    }
+    finally
+    {
+        Environment.SetEnvironmentVariable("FOUNDRY_PROJECT_ENDPOINT", endpoint);
+        Environment.SetEnvironmentVariable("FOUNDRY_MODEL_DEPLOYMENT", deployment);
+    }
+    return Task.CompletedTask;
+});
 
 if (failures.Count > 0)
 {
     Console.Error.WriteLine(string.Join(Environment.NewLine, failures));
     return 1;
 }
-Console.WriteLine("PASS: 13 offline change-risk-agent checks");
+Console.WriteLine("PASS: 14 offline change-risk-agent checks");
 
 if (args.Contains("--live", StringComparer.Ordinal))
 {
@@ -246,7 +294,7 @@ static void Expect(bool condition, string message)
 
 static string FoundryFunctionCallResponse(string changeId) => $$"""
     {
-      "id": "resp_tool",
+      "id": "response_example_tool",
       "status": "completed",
       "output": [
         {
@@ -269,7 +317,7 @@ static string FoundryFunctionCallResponse(string changeId) => $$"""
 
 static string FoundryFinalResponse(string changeId, string classification) => $$"""
     {
-      "id": "resp_final",
+      "id": "response_example_final",
       "status": "completed",
       "output": [
         {
@@ -290,7 +338,7 @@ static string FoundryFinalResponse(string changeId, string classification) => $$
 
 static string FoundryUnsafeFinalResponse() => """
     {
-      "id": "resp_final",
+      "id": "response_example_final",
       "status": "completed",
       "output": [
         {

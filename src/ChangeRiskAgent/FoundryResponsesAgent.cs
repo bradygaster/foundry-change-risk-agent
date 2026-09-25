@@ -9,23 +9,26 @@ namespace ChangeRiskAgent;
 
 public sealed record FoundryOptions(Uri ProjectEndpoint, string ModelDeployment, string? TenantId)
 {
-    public const string DefaultProjectEndpoint =
-        "https://squad-imagegen-swc-1ntj32.services.ai.azure.com/api/projects/squad-imagegen-swc-1ntj32-proj";
-    public const string DefaultModelDeployment = "gpt-5-mini";
-    public const string DefaultTenantId = "72f988bf-86f1-41af-91ab-2d7cd011db47";
     public const string TokenScope = "https://ai.azure.com/.default";
 
     public Uri ResponsesEndpoint => new(ProjectEndpoint.ToString().TrimEnd('/') + "/openai/v1/responses");
 
     public static FoundryOptions FromEnvironment()
     {
-        var endpoint = Environment.GetEnvironmentVariable("FOUNDRY_PROJECT_ENDPOINT")
-            ?? DefaultProjectEndpoint;
-        var deployment = Environment.GetEnvironmentVariable("FOUNDRY_MODEL_DEPLOYMENT")
-            ?? DefaultModelDeployment;
-        var tenantId = Environment.GetEnvironmentVariable("AZURE_TENANT_ID")
-            ?? DefaultTenantId;
+        var endpoint = GetRequiredEnvironmentVariable("FOUNDRY_PROJECT_ENDPOINT");
+        var deployment = GetRequiredEnvironmentVariable("FOUNDRY_MODEL_DEPLOYMENT");
+        var tenantId = Environment.GetEnvironmentVariable("AZURE_TENANT_ID");
         return Validate(endpoint, deployment, tenantId);
+    }
+
+    private static string GetRequiredEnvironmentVariable(string name)
+    {
+        var value = Environment.GetEnvironmentVariable(name);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException($"{name} must be set for live Foundry execution.");
+        }
+        return value;
     }
 
     public static FoundryOptions Validate(string endpoint, string deployment, string? tenantId)

@@ -9,6 +9,10 @@ The default deterministic agent remains network-free. `--live` uses the official
 Foundry project Responses REST route with `DefaultAzureCredential` and the
 `https://ai.azure.com/.default` token scope. No keys or secrets are stored.
 
+> **IMPORTANT: Every Azure resource name, identifier, and endpoint displayed in
+> this repository is fictional. It is NOT LIVE and does NOT identify a real
+> Azure resource.**
+
 ## Run
 
 Requires .NET 10 or later for this checked-in project:
@@ -18,23 +22,27 @@ dotnet run --project src/ChangeRiskAgent -- CHG-1001
 dotnet run --project src/ChangeRiskAgent -- CHG-9999
 
 # Authenticated Microsoft Foundry execution
-az login --tenant 72f988bf-86f1-41af-91ab-2d7cd011db47
-az account set --subscription 104482b7-4580-4de0-9453-0fc78df0b80e
+export FOUNDRY_PROJECT_ENDPOINT="https://example-foundry-account.services.ai.azure.com/api/projects/example-project"
+export FOUNDRY_MODEL_DEPLOYMENT="example-model-deployment"
+export AZURE_TENANT_ID="00000000-0000-4000-8000-000000000001"
+az login --tenant "$AZURE_TENANT_ID"
 dotnet run --project src/ChangeRiskAgent -- --live --diagnostics CHG-1001
 ```
 
-The checked-in non-secret defaults target:
+The following values illustrate the expected shapes only. They are fictional,
+NOT LIVE, and NOT REAL:
 
-- Project endpoint: `https://squad-imagegen-swc-1ntj32.services.ai.azure.com/api/projects/squad-imagegen-swc-1ntj32-proj`
-- Project resource ID: `/subscriptions/104482b7-4580-4de0-9453-0fc78df0b80e/resourceGroups/rg-squad-imagegen/providers/Microsoft.CognitiveServices/accounts/squad-imagegen-swc-1ntj32/projects/squad-imagegen-swc-1ntj32-proj`
-- Deployment: `gpt-5-mini`
-- Deployment resource ID: `/subscriptions/104482b7-4580-4de0-9453-0fc78df0b80e/resourceGroups/rg-squad-imagegen/providers/Microsoft.CognitiveServices/accounts/squad-imagegen-swc-1ntj32/deployments/gpt-5-mini`
-- Tenant: `72f988bf-86f1-41af-91ab-2d7cd011db47`
+- Project endpoint: `https://example-foundry-account.services.ai.azure.com/api/projects/example-project`
+- Project resource ID: `/subscriptions/00000000-0000-4000-8000-000000000002/resourceGroups/example-resource-group/providers/Microsoft.CognitiveServices/accounts/example-foundry-account/projects/example-project`
+- Deployment: `example-model-deployment`
+- Deployment resource ID: `/subscriptions/00000000-0000-4000-8000-000000000002/resourceGroups/example-resource-group/providers/Microsoft.CognitiveServices/accounts/example-foundry-account/deployments/example-model-deployment`
+- Tenant: `00000000-0000-4000-8000-000000000001`
 
-Override them with `FOUNDRY_PROJECT_ENDPOINT`, `FOUNDRY_MODEL_DEPLOYMENT`, and
-`AZURE_TENANT_ID`. The endpoint is restricted to HTTPS `services.ai.azure.com`
-project URLs. The current project and deployment are sufficient; no resource
-creation is required.
+Live execution has no checked-in endpoint or deployment defaults. Set
+`FOUNDRY_PROJECT_ENDPOINT` and `FOUNDRY_MODEL_DEPLOYMENT` explicitly.
+`AZURE_TENANT_ID` is optional and can constrain `DefaultAzureCredential` to a
+specific tenant. The endpoint is restricted to HTTPS `services.ai.azure.com`
+project URLs.
 
 ## Test
 
@@ -71,12 +79,12 @@ data, tokens, and credentials.
 
 ## Verified API and packages
 
-Verified on 2026-09-25 against current Microsoft documentation and the live
-deployment:
+Verified on 2026-09-25 against current Microsoft documentation and an
+authenticated deployment whose identifying details have been removed:
 
 - Microsoft Foundry project endpoint route: `/openai/v1/responses`
 - Microsoft Entra token scope: `https://ai.azure.com/.default`
-- Deployment: `gpt-5-mini` version `2025-08-07`
+- Deployment: identifying name and version removed
 - `Azure.Identity` `1.21.0` (used)
 - `Azure.AI.Projects` `2.0.1`, `Azure.AI.Extensions.OpenAI` `2.0.0`, and
   `OpenAI` `2.14.0` (verified current stable alternatives)

@@ -1,5 +1,9 @@
 # Scenario Journal: Change Risk Advisor
 
+> **SANITIZED PUBLIC RECORD:** All displayed Azure resource names, identifiers,
+> endpoints, and deployment details are fictional examples. They are NOT LIVE
+> and NOT REAL. Identifying details from authenticated validation were removed.
+
 ## Outcome and acceptance criteria
 
 - **Outcome:** Produce a human-reviewed change-risk advisory grounded only in a
@@ -37,7 +41,7 @@ one host-validated function call, and requests a strict structured advisory.
 | --- | --- | --- | --- | --- |
 | A single typed local tool is sufficient for the sample behavior. | 2026-09-25 | Local repository | EVIDENCED | None for local behavior. |
 | Malformed, missing, failed-test, and cancelled paths fail safely. | 2026-09-25 | Local repository | EVIDENCED | Model-service failure needs an authenticated adapter test. |
-| Current Foundry Responses API can host the same contract. | 2026-09-25 | Authenticated project endpoint and `gpt-5-mini` deployment | EVIDENCED | Model output remains probabilistic and must retain host validation. |
+| Current Foundry Responses API can host the same contract. | 2026-09-25 | Authenticated project endpoint and deployment (identifiers removed) | EVIDENCED | Model output remains probabilistic and must retain host validation. |
 | Local identity can authenticate without stored secrets. | 2026-09-25 | Azure CLI user token for `https://ai.azure.com/.default` | EVIDENCED | Production should use a managed identity with Foundry User at project scope. |
 
 ## Validation log
@@ -46,17 +50,18 @@ one host-validated function call, and requests a strict structured advisory.
 | --- | --- | --- | --- |
 | `dotnet run --project samples/change-risk-agent/tests/ChangeRiskAgent.Tests` | PASS: 10 checks | Observable agent/tool lifecycle, allowlist and binding enforcement, one-call limit, input validation, exact lookup, conservative policy, missing evidence, human ownership, and cancellation. | Foundry SDK/API compatibility or cloud runtime behavior. |
 | `dotnet run --project samples/change-risk-agent/src/ChangeRiskAgent -- CHG-1001` | PASS; low-risk advisory emitted | The documented happy path is runnable. | Model quality, latency, cost, quota, or capacity. |
-| `dotnet run --project tests/ChangeRiskAgent.Tests` | PASS: 13 offline checks; authenticated suite explicitly skipped | Known, unknown, and adversarial fixtures; exact REST request/function/result/final shape; host binding; one-call limit; structured output and policy gates. | Live service availability. |
-| `RUN_FOUNDRY_LIVE_TESTS=1 dotnet run --project tests/ChangeRiskAgent.Tests -- --live` | PASS: CHG-1001 low, CHG-9999 insufficient-evidence, CHG-1003 high; human review required for all | Authenticated project endpoint, real `gpt-5-mini` function call, exact host dispatch, tool continuation, final response, injection resistance, and bounded 429 recovery. | Production managed-identity RBAC and production change-system integration. |
+| `dotnet run --project tests/ChangeRiskAgent.Tests` | PASS: 14 offline checks; authenticated suite explicitly skipped | Known, unknown, and adversarial fixtures; exact REST request/function/result/final shape; host binding; one-call limit; mandatory live configuration; structured output and policy gates. | Live service availability. |
+| `RUN_FOUNDRY_LIVE_TESTS=1 dotnet run --project tests/ChangeRiskAgent.Tests -- --live` | PASS: CHG-1001 low, CHG-9999 insufficient-evidence, CHG-1003 high; human review required for all | Authenticated project endpoint and deployment (identifiers removed), exact host dispatch, tool continuation, final response, injection resistance, and bounded 429 recovery. | Production managed-identity RBAC and production change-system integration. |
 | Two consecutive `Release` live matrices after nondeterministic model advisory | PASS: six scenarios total; known, unknown, and adversarial classifications were stable while exercising bounded 429 recovery | Model tool-result turn remains required; host canonicalizes safety-critical fields from `ToolResult`, removing probabilistic policy failures without weakening binding, injection, or human-review controls. | Model-authored rationale is intentionally not rendered because it is non-authoritative. |
 
-## Authenticated resource evidence
+## Sanitized authenticated resource evidence
 
-- Foundry project: `/subscriptions/104482b7-4580-4de0-9453-0fc78df0b80e/resourceGroups/rg-squad-imagegen/providers/Microsoft.CognitiveServices/accounts/squad-imagegen-swc-1ntj32/projects/squad-imagegen-swc-1ntj32-proj`
-- Model deployment: `/subscriptions/104482b7-4580-4de0-9453-0fc78df0b80e/resourceGroups/rg-squad-imagegen/providers/Microsoft.CognitiveServices/accounts/squad-imagegen-swc-1ntj32/deployments/gpt-5-mini`
-- Deployment evidence: `gpt-5-mini` version `2025-08-07`, `GlobalStandard`, capacity `3`, provisioning state `Succeeded`
+- **Every value below is fictional, NOT LIVE, and NOT REAL.**
+- Foundry project example: `/subscriptions/00000000-0000-4000-8000-000000000002/resourceGroups/example-resource-group/providers/Microsoft.CognitiveServices/accounts/example-foundry-account/projects/example-project`
+- Model deployment example: `/subscriptions/00000000-0000-4000-8000-000000000002/resourceGroups/example-resource-group/providers/Microsoft.CognitiveServices/accounts/example-foundry-account/deployments/example-model-deployment`
+- Deployment evidence: identifying deployment name, version, SKU, capacity, and operator details removed
 - Token audience: `https://ai.azure.com/.default`
-- No resources were created or changed because the existing project and deployment satisfied the scenario.
+- No resources were created or changed during the recorded validation.
 
 ## Friction and recovery
 

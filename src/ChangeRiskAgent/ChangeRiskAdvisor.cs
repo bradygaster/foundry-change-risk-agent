@@ -14,12 +14,12 @@ public sealed record ChangeRecord(
 
 public sealed record ToolResult(string Status, string ChangeId, ChangeRecord? Change, string? Message);
 
-public sealed record ToolCallRequest(string ToolName, string ChangeId);
+public sealed record ToolCallRequest(string ToolName, string ChangeId, string? CallId = null);
 
 public sealed record AgentTurn(ToolCallRequest? ToolCall, string? FinalResponse)
 {
-    public static AgentTurn CallTool(string toolName, string changeId) =>
-        new(new ToolCallRequest(toolName, changeId), null);
+    public static AgentTurn CallTool(string toolName, string changeId, string? callId = null) =>
+        new(new ToolCallRequest(toolName, changeId, callId), null);
 
     public static AgentTurn Complete(string response) => new(null, response);
 }

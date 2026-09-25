@@ -8,8 +8,7 @@
   missing, failed, or cancelled lookups fail closed; no tool can mutate or deploy;
   default tests require no credentials or network.
 - **Non-goals:** Automated approval, deployment, persistent agent state, hosted
-  agent infrastructure, production change-system access, or authenticated cloud
-  validation.
+  agent infrastructure, or production change-system access.
 
 ## Architecture decision
 
@@ -18,10 +17,10 @@ function tool. It rejected Hosted Agent, Prompt Agent, multi-agent orchestration
 OpenAPI deployment, MCP, code execution, search/IQ, Toolbox, and local inference
 because none earned its lifecycle or safety cost for one synthetic lookup.
 
-The integrated sample uses a deterministic `IAdvisoryModel` so it remains runnable
-without external packages or credentials. Its documented adapter boundary is the
-place for a current Foundry Responses API or Agent Framework integration after
-authenticated compatibility evidence exists.
+The integrated sample keeps a deterministic `IAdvisoryAgent` for offline use and
+adds a real Foundry Responses REST adapter authenticated by `Azure.Identity`. The
+adapter uses the project endpoint, preserves stateless response items, dispatches
+one host-validated function call, and requests a strict structured advisory.
 
 ## Squad activity
 
@@ -38,8 +37,8 @@ authenticated compatibility evidence exists.
 | --- | --- | --- | --- | --- |
 | A single typed local tool is sufficient for the sample behavior. | 2026-09-25 | Local repository | EVIDENCED | None for local behavior. |
 | Malformed, missing, failed-test, and cancelled paths fail safely. | 2026-09-25 | Local repository | EVIDENCED | Model-service failure needs an authenticated adapter test. |
-| Current Foundry Responses API or Agent Framework can host the same contract. | 2026-09-25 | Public documentation only | DOCUMENTED_NOT_AUTHENTICATED | Verify package API, model/tool compatibility, project, region, quota, capacity, and runtime invocation. |
-| Production identity is secretless and least privilege. | 2026-09-25 | None | NOT_EVIDENCED | Add `DefaultAzureCredential` adapter and role evidence in a target environment. |
+| Current Foundry Responses API can host the same contract. | 2026-09-25 | Authenticated project endpoint and `gpt-5-mini` deployment | EVIDENCED | Model output remains probabilistic and must retain host validation. |
+| Local identity can authenticate without stored secrets. | 2026-09-25 | Azure CLI user token for `https://ai.azure.com/.default` | EVIDENCED | Production should use a managed identity with Foundry User at project scope. |
 
 ## Validation log
 
@@ -47,6 +46,16 @@ authenticated compatibility evidence exists.
 | --- | --- | --- | --- |
 | `dotnet run --project samples/change-risk-agent/tests/ChangeRiskAgent.Tests` | PASS: 10 checks | Observable agent/tool lifecycle, allowlist and binding enforcement, one-call limit, input validation, exact lookup, conservative policy, missing evidence, human ownership, and cancellation. | Foundry SDK/API compatibility or cloud runtime behavior. |
 | `dotnet run --project samples/change-risk-agent/src/ChangeRiskAgent -- CHG-1001` | PASS; low-risk advisory emitted | The documented happy path is runnable. | Model quality, latency, cost, quota, or capacity. |
+| `dotnet run --project tests/ChangeRiskAgent.Tests` | PASS: 13 offline checks; authenticated suite explicitly skipped | Known, unknown, and adversarial fixtures; exact REST request/function/result/final shape; host binding; one-call limit; structured output and policy gates. | Live service availability. |
+| `RUN_FOUNDRY_LIVE_TESTS=1 dotnet run --project tests/ChangeRiskAgent.Tests -- --live` | PASS: CHG-1001 low, CHG-9999 insufficient-evidence, CHG-1003 high; human review required for all | Authenticated project endpoint, real `gpt-5-mini` function call, exact host dispatch, tool continuation, final response, injection resistance, and bounded 429 recovery. | Production managed-identity RBAC and production change-system integration. |
+
+## Authenticated resource evidence
+
+- Foundry project: `/subscriptions/104482b7-4580-4de0-9453-0fc78df0b80e/resourceGroups/rg-squad-imagegen/providers/Microsoft.CognitiveServices/accounts/squad-imagegen-swc-1ntj32/projects/squad-imagegen-swc-1ntj32-proj`
+- Model deployment: `/subscriptions/104482b7-4580-4de0-9453-0fc78df0b80e/resourceGroups/rg-squad-imagegen/providers/Microsoft.CognitiveServices/accounts/squad-imagegen-swc-1ntj32/deployments/gpt-5-mini`
+- Deployment evidence: `gpt-5-mini` version `2025-08-07`, `GlobalStandard`, capacity `3`, provisioning state `Succeeded`
+- Token audience: `https://ai.azure.com/.default`
+- No resources were created or changed because the existing project and deployment satisfied the scenario.
 
 ## Friction and recovery
 

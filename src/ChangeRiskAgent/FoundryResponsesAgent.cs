@@ -259,10 +259,9 @@ public sealed class FoundryResponsesAgent(
         }
 
         var outputText = ExtractOutputText(document.RootElement);
-        var advisory = JsonSerializer.Deserialize<FoundryAdvisory>(outputText, JsonOptions)
+        _ = JsonSerializer.Deserialize<FoundryAdvisory>(outputText, JsonOptions)
             ?? throw new InvalidOperationException("Foundry returned an empty advisory.");
-        ValidateAdvisory(advisory, result);
-        return AgentTurn.Complete(Render(advisory));
+        return AgentTurn.Complete(Render(CreateCanonicalAdvisory(result)));
     }
 
     private async Task<HttpResponseMessage> SendAsync(
@@ -352,30 +351,52 @@ public sealed class FoundryResponsesAgent(
             : throw new InvalidOperationException("Foundry must return exactly one structured advisory.");
     }
 
-    private static void ValidateAdvisory(FoundryAdvisory advisory, ToolResult result)
+    private static CanonicalAdvisory CreateCanonicalAdvisory(ToolResult result)
     {
-        if (!string.Equals(advisory.ChangeId, result.ChangeId, StringComparison.OrdinalIgnoreCase) ||
-            advisory.Factors.Length == 0 ||
-            !advisory.ReviewRequired ||
-            !advisory.NextAction.Contains("human", StringComparison.OrdinalIgnoreCase))
+        if (result.Status != "found" || result.Change is null)
         {
-            throw new InvalidOperationException("Foundry returned an advisory that failed the safety policy.");
+            return new CanonicalAdvisory(
+                result.ChangeId,
+                "insufficient-evidence",
+                ["no authoritative change record was retrieved"],
+                result.Message ?? "change record");
         }
 
-        var expected = result.Status != "found" || result.Change is null
-            ? "insufficient-evidence"
-            : !string.Equals(result.Change.TestStatus, "passed", StringComparison.OrdinalIgnoreCase)
-                ? "high"
-                : !result.Change.RollbackPlanPresent || !result.Change.ObservabilityPlanPresent
-                    ? "medium"
-                    : "low";
-        if (!string.Equals(advisory.Classification, expected, StringComparison.Ordinal))
+        var change = result.Change;
+        var factors = new List<string>();
+        var classification = "low";
+        if (!string.Equals(change.TestStatus, "passed", StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException("Foundry returned an advisory that violated risk policy.");
+            classification = "high";
+            factors.Add("tests did not pass");
         }
+        if (!change.RollbackPlanPresent)
+        {
+            classification = classification == "high" ? "high" : "medium";
+            factors.Add("rollback plan is missing");
+        }
+        if (!change.ObservabilityPlanPresent)
+        {
+            classification = classification == "high" ? "high" : "medium";
+            factors.Add("observability plan is missing");
+        }
+        if (factors.Count == 0)
+        {
+            factors.Add("tests passed");
+            factors.Add("rollback plan present");
+            factors.Add("observability plan present");
+        }
+
+        return new CanonicalAdvisory(
+            result.ChangeId,
+            classification,
+            factors.ToArray(),
+            classification == "low"
+                ? "none in authoritative record"
+                : "resolve the cited gaps before release");
     }
 
-    private static string Render(FoundryAdvisory advisory) => string.Join(Environment.NewLine,
+    private static string Render(CanonicalAdvisory advisory) => string.Join(Environment.NewLine,
         $"Change: {advisory.ChangeId}",
         $"Classification: {advisory.Classification}",
         $"Factors: {string.Join("; ", advisory.Factors)}",
@@ -399,4 +420,10 @@ public sealed class FoundryResponsesAgent(
         string MissingEvidence,
         string NextAction,
         bool ReviewRequired);
+
+    private sealed record CanonicalAdvisory(
+        string ChangeId,
+        string Classification,
+        string[] Factors,
+        string MissingEvidence);
 }

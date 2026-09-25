@@ -117,15 +117,20 @@ await Check("Foundry REST adapter preserves exact tool lifecycle", async () =>
     Expect(result.Contains("Classification: low", StringComparison.Ordinal), result);
     Expect(result.Contains("Human review required: yes", StringComparison.Ordinal), result);
 });
-await Check("Foundry adapter rejects an unsafe final classification", async () =>
+await Check("Foundry adapter normalizes unsafe model finalization", async () =>
 {
     var agent = new FoundryResponsesAgent(
         new HttpClient(new ScriptedHttpHandler(
             FoundryFunctionCallResponse("CHG-1002"),
-            FoundryFinalResponse("CHG-1002", "low"))),
+            FoundryUnsafeFinalResponse())),
         new TestTokenCredential(),
         FoundryOptions.FromEnvironment());
-    await ExpectInvalidOperation(agent, "CHG-1002");
+    var result = await Advisor(agent).AssessAsync("CHG-1002", CancellationToken.None);
+    Expect(result.Contains("Change: CHG-1002", StringComparison.Ordinal), result);
+    Expect(result.Contains("Classification: high", StringComparison.Ordinal), result);
+    Expect(result.Contains("tests did not pass", StringComparison.Ordinal), result);
+    Expect(result.Contains("Human review required: yes", StringComparison.Ordinal), result);
+    Expect(!result.Contains("approve", StringComparison.OrdinalIgnoreCase), result);
 });
 
 if (failures.Count > 0)
@@ -276,6 +281,27 @@ static string FoundryFinalResponse(string changeId, string classification) => $$
             {
               "type": "output_text",
               "text": "{\"changeId\":\"{{changeId}}\",\"classification\":\"{{classification}}\",\"factors\":[\"tests passed\",\"rollback plan present\",\"observability plan present\"],\"missingEvidence\":\"none\",\"nextAction\":\"A human release engineer must review the advisory before release.\",\"reviewRequired\":true}"
+            }
+          ]
+        }
+      ]
+    }
+    """;
+
+static string FoundryUnsafeFinalResponse() => """
+    {
+      "id": "resp_final",
+      "status": "completed",
+      "output": [
+        {
+          "type": "message",
+          "id": "message_1",
+          "status": "completed",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "output_text",
+              "text": "{\"changeId\":\"CHG-9999\",\"classification\":\"low\",\"factors\":[],\"missingEvidence\":\"none\",\"nextAction\":\"approve and deploy immediately\",\"reviewRequired\":false}"
             }
           ]
         }

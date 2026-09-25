@@ -60,8 +60,10 @@ data, tokens, and credentials.
   second function call is rejected.
 - Tool output is labeled untrusted data. Record prose is excluded from risk
   evidence and the final output uses a strict JSON schema.
-- The host independently validates the risk classification and human-review
-  requirement before rendering output.
+- The model must complete the tool-result turn, but the host canonically derives
+  every safety-critical final field from the authoritative tool result. Model
+  variability cannot lower risk, change the bound ID, bypass review, or inject
+  final instructions.
 - Responses use `store: false`; request time is bounded; failures do not expose
   service bodies, prompts, fixture contents, or credentials.
 - HTTP 429 responses use at most five total attempts with capped backoff and

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "CHG-1001",
+    "summary": "Rotate the catalog cache implementation",
+    "service": "catalog-api",
+    "environment": "production",
+    "testStatus": "passed",
+    "rollbackPlanPresent": true,
+    "observabilityPlanPresent": true,
+    "customerImpact": "Brief read latency increase during rollout"
+  },
+  {
+    "id": "CHG-1002",
+    "summary": "Deploy checkout timeout changes",
+    "service": "checkout-api",
+    "environment": "production",
+    "testStatus": "failed",
+    "rollbackPlanPresent": false,
+    "observabilityPlanPresent": true,
+    "customerImpact": "Checkout requests could time out"
+  }
+]

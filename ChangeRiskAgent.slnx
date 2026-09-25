@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ChangeRiskAgent/ChangeRiskAgent.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ChangeRiskAgent.Tests/ChangeRiskAgent.Tests.csproj" />
+  </Folder>
+</Solution>
